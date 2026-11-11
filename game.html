@@ -8,27 +8,48 @@ main{max-width:480px;margin:0 auto;padding:20px}
 button,input{font-size:18px;padding:14px;border-radius:10px;border:0;width:100%;box-sizing:border-box;margin-top:10px}
 button{background:#FFC93C;color:#14213D;font-weight:700}
 button.sub{background:#1F2F55;color:#F4F1E8}
+button.small{font-size:14px;padding:8px;margin-top:6px}
 input{background:#fff;color:#14213D}
 .opt{background:#1F2F55;color:#F4F1E8;text-align:left}
 .box{background:#1F2F55;border-radius:12px;padding:14px;margin-top:12px}
+.mute{font-size:13px;opacity:.75;margin:8px 0 0}
+.bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}
+.bar .l{width:92px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .t{flex:1;background:#14213D;border-radius:6px;height:14px}
+.bar .t i{display:block;height:100%;background:#FFC93C;border-radius:6px}
+.bar .n{width:76px;flex:none;text-align:right;opacity:.8}
+.kpi{display:flex;gap:8px}.kpi div{flex:1;background:#14213D;border-radius:10px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:22px}
 [hidden]{display:none!important}
 </style></head>
 <body><main>
 <h1>VOCA QUEST</h1>
 <section id="s-start">
-  <div class="box" id="link-status"></div>
-  <input id="nick" maxlength="30" placeholder="닉네임 또는 학번">
-  <div id="manual" hidden><input id="manual-url" placeholder="교사가 알려준 결과 제출 주소(선택)"></div>
+  <div class="box"><span id="link-status"></span>
+    <button id="btn-unlink" class="sub small" hidden>반 연결 해제</button>
+    <p class="mute" id="link-hint" hidden></p></div>
+  <p class="mute" id="nick-hint" hidden></p>
+  <input id="nick" maxlength="30">
+  <p class="mute" id="nick-msg" hidden style="color:#FFB4A8">이름 또는 학번을 입력해 주세요.</p>
   <button id="btn-start">게임 시작 (Day 1 · 객관식)</button>
+  <button id="btn-history" class="sub">내 기록 보기</button>
 </section>
 <section id="s-quiz" hidden>
   <p id="q-num"></p><h2 id="q-word"></h2><div id="q-opts"></div>
 </section>
 <section id="s-result" hidden>
   <h2>결과</h2><div class="box" id="result"></div>
+  <p class="mute" id="saved-note"></p>
   <button id="btn-send">결과를 선생님께 전송</button>
-  <button id="btn-skip" class="sub">전송하지 않고 끝내기</button>
+  <button id="btn-history2" class="sub">내 기록 보기</button>
+  <button id="btn-home" class="sub">처음으로</button>
   <div class="box" id="send-status" hidden></div>
+</section>
+<section id="s-history" hidden>
+  <h2>내 기록</h2><div id="hist"></div>
+  <p class="mute">기록은 이 기기·브라우저에만 저장돼요. 브라우저 데이터를 지우면 사라져요.</p>
+  <button id="btn-back" class="sub">돌아가기</button>
+  <button id="btn-clear" class="sub">기록 모두 삭제</button>
 </section>
 </main>
 <script>
@@ -38,6 +59,14 @@ const WORDS=[
  {w:'ambiguous',ko:'모호한',d:['분명한','엄격한','평범한']},
  {w:'diminish',ko:'줄이다',d:['늘리다','지키다','옮기다']},
  {w:'prevalent',ko:'널리 퍼진',d:['드문','숨겨진','오래된']}];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- 기기 저장 (브라우저가 막아도 게임은 계속 동작) ---------- */
+const LS={get(k){try{return localStorage.getItem(k)}catch(_){return null}},
+  set(k,v){try{localStorage.setItem(k,v);return true}catch(_){return false}},
+  del(k){try{localStorage.removeItem(k)}catch(_){}}};
+
 /** 링크의 e 값을 결과 제출 주소로 해석. script.google.com 의 웹 앱 주소만 허용(학생 데이터 오전송 방지) */
 function resolveEndpoint(e){
   if(!e) return null;
@@ -47,21 +76,65 @@ function resolveEndpoint(e){
   }catch(_){}
   return null;
 }
-const $=id=>document.getElementById(id);
+/* 반 연결: 교사 링크(?e=)로 열면 기기에 기억하고, 이후 교재 QR(범용 주소)로 들어와도 같은 반으로 연결 */
 let endpoint=resolveEndpoint(new URLSearchParams(location.search).get('e'));
-let S={};
+if(endpoint) LS.set('vq_class',endpoint); else endpoint=resolveEndpoint(LS.get('vq_class'));
+
 function showLink(){
-  $('link-status').textContent=endpoint?'✓ 우리 반 링크로 접속했습니다. 결과를 선생님께 보낼 수 있어요.'
-    :'독학 모드입니다. 결과 전송은 선택 사항이에요.';
-  $('manual').hidden=!!endpoint;
+  $('link-status').textContent=endpoint?'✓ 우리 반에 연결되어 있어요. 결과를 선생님께 보낼 수 있어요.'
+    :'독학 모드 · 기록은 이 브라우저에만 저장돼요 (지우면 사라져요).';
+  $('btn-unlink').hidden=!endpoint;
+  $('link-hint').textContent='선생님이 알려준 주소가 있다면 그 주소로 들어오세요. 그래야 결과가 선생님께 전달돼요.';
+  $('link-hint').hidden=!!endpoint;
+  $('nick').placeholder=endpoint?'이름 또는 학번':'닉네임 (선택)';   // 반 연결 시에만 필수
+  $('nick-hint').textContent='선생님이 정해 주신 양식대로 이름 또는 학번을 입력하세요.';
+  $('nick-hint').hidden=!endpoint;$('nick-msg').hidden=true;
 }
+$('btn-unlink').onclick=()=>{LS.del('vq_class');endpoint=null;showLink();};
 showLink();
+$('nick').value=LS.get('vq_nick')||'';
+
+/* ---------- 내 기록 ---------- */
+const HKEY='vq_history';
+function loadHistory(){try{const h=JSON.parse(LS.get(HKEY)||'[]');return Array.isArray(h)?h:[]}catch(_){return []}}
+function saveHistory(p){
+  const h=loadHistory().filter(x=>x.sid!==p.sessionId);
+  h.push({sid:p.sessionId,at:p.endedAt,game:p.gameName,unit:p.unit,total:p.total,correct:p.correct,acc:p.accuracy,sec:p.durationSec,
+    ans:p.answers.map(a=>[a.word,a.isCorrect?1:0])});
+  return LS.set(HKEY,JSON.stringify(h.slice(-300)));
+}
+function computeStats(h){
+  const word={};let acc=0,sec=0;
+  h.forEach(g=>{acc+=+g.acc||0;sec+=+g.sec||0;(g.ans||[]).forEach(([w,ok])=>{const x=word[w]||(word[w]={t:0,x:0});x.t++;if(!ok)x.x++;});});
+  const words=Object.keys(word).filter(w=>word[w].x>0).map(w=>({w,t:word[w].t,x:word[w].x,rate:Math.round(word[w].x/word[w].t*100)}))
+    .sort((a,b)=>b.x-a.x||b.rate-a.rate||a.w.localeCompare(b.w));
+  return {n:h.length,avgAcc:h.length?Math.round(acc/h.length*10)/10:0,minutes:Math.round(sec/60),recent:h.slice(-10),words};
+}
+const bar=(l,v,max,n)=>`<div class="bar"><span class="l">${esc(l)}</span><span class="t"><i style="width:${max?Math.round(v/max*100):0}%"></i></span><span class="n">${esc(n)}</span></div>`;
+function renderHistory(){
+  const s=computeStats(loadHistory());
+  if(!s.n){$('hist').innerHTML='<div class="box">아직 기록이 없어요. 게임을 한 판 해 보세요!</div>';return;}
+  const top=s.words.slice(0,10);
+  $('hist').innerHTML=
+   `<div class="kpi"><div>플레이<b>${s.n}</b></div><div>평균 정답률<b>${s.avgAcc}%</b></div><div>학습시간<b>${s.minutes}분</b></div></div>
+    <div class="box"><b>최근 정답률</b>${s.recent.map((g,i)=>bar((i+1)+'번째',g.acc,100,g.acc+'%')).join('')}</div>
+    <div class="box"><b>자주 틀린 단어</b>${top.length?top.map(w=>bar(w.w,w.x,top[0].x,w.x+'회 · '+w.rate+'%')).join(''):'<p class="mute">틀린 단어가 없어요 🎉</p>'}</div>`;
+}
+const show=id=>{['s-start','s-quiz','s-result','s-history'].forEach(x=>$(x).hidden=x!==id);};
+$('btn-history').onclick=$('btn-history2').onclick=()=>{renderHistory();show('s-history');};
+$('btn-back').onclick=()=>show(S.payload?'s-result':'s-start');
+$('btn-clear').onclick=()=>{if(confirm('이 기기에 저장된 내 기록을 모두 삭제할까요?')){LS.del(HKEY);renderHistory();}};
+$('btn-home').onclick=()=>{S={};show('s-start');};
+
+/* ---------- 게임 ---------- */
+let S={};
 $('btn-start').onclick=()=>{
   const nick=$('nick').value.trim();
-  if(!nick){$('nick').focus();return;}
-  if(!endpoint){const m=resolveEndpoint($('manual-url').value.trim()); if(m) endpoint=m;}
+  if(endpoint&&!nick){$('nick-msg').hidden=false;$('nick').focus();return;}   // 반 연결 시 이름 필수, 독학은 선택
+  if(nick) LS.set('vq_nick',nick);
   S={nick,i:0,answers:[],start:new Date(),qStart:Date.now(),sid:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2))};
-  $('s-start').hidden=true;$('s-quiz').hidden=false;ask();
+  $('btn-send').disabled=false;$('send-status').hidden=true;
+  show('s-quiz');ask();
 };
 function ask(){
   const q=WORDS[S.i];$('q-num').textContent=(S.i+1)+' / '+WORDS.length;$('q-word').textContent=q.w;
@@ -79,15 +152,16 @@ function pick(o){
 function finish(){
   const end=new Date(),ok=S.answers.filter(a=>a.isCorrect).length,t=WORDS.length;
   S.payload={sessionId:S.sid,gameId:'mc-01',gameName:'객관식',book:'보카퀘스트(샘플)',unit:'Day 1',
-    nickname:S.nick,startedAt:S.start.toISOString(),endedAt:end.toISOString(),
+    nickname:S.nick||'(독학)',startedAt:S.start.toISOString(),endedAt:end.toISOString(),
     durationSec:Math.round((end-S.start)/1000),total:t,correct:ok,wrong:t-ok,score:ok*20,
     accuracy:Math.round(ok/t*100),completed:true,
     wrongWords:S.answers.filter(a=>!a.isCorrect).map(a=>a.word),answers:S.answers};
-  $('s-quiz').hidden=true;$('s-result').hidden=false;
+  const saved=saveHistory(S.payload);   // 반 연결 여부와 상관없이 내 기록에는 항상 저장
+  show('s-result');
   $('result').textContent='점수 '+S.payload.score+' · 정답률 '+S.payload.accuracy+'% · '+S.payload.durationSec+'초';
-  if(!endpoint) $('btn-send').textContent='결과 전송 (제출 주소가 없어 불가)',$('btn-send').disabled=true;
+  $('saved-note').textContent=(saved?'내 기록에 저장했어요. ':'이 브라우저에서는 기록을 저장할 수 없어요. ')+(endpoint?'':'(독학 모드: 선생님께 보내지 않아요)');
+  $('btn-send').hidden=!endpoint;
 }
-$('btn-skip').onclick=()=>{$('s-result').innerHTML='<h2>수고했어요!</h2>';};
 $('btn-send').onclick=async()=>{
   const b=$('btn-send');b.disabled=true;const st=$('send-status');st.hidden=false;st.textContent='전송 중...';
   const body=JSON.stringify(S.payload),init={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body};
