@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>보카퀘스트 범용 게임 (샘플)</title>
+<style>
+body{font-family:'Noto Sans KR',sans-serif;margin:0;background:#14213D;color:#F4F1E8}
+main{max-width:480px;margin:0 auto;padding:20px}
+button,input{font-size:18px;padding:14px;border-radius:10px;border:0;width:100%;box-sizing:border-box;margin-top:10px}
+button{background:#FFC93C;color:#14213D;font-weight:700}
+button.sub{background:#1F2F55;color:#F4F1E8}
+input{background:#fff;color:#14213D}
+.opt{background:#1F2F55;color:#F4F1E8;text-align:left}
+.box{background:#1F2F55;border-radius:12px;padding:14px;margin-top:12px}
+[hidden]{display:none!important}
+</style></head>
+<body><main>
+<h1>VOCA QUEST</h1>
+<section id="s-start">
+  <div class="box" id="link-status"></div>
+  <input id="nick" maxlength="30" placeholder="닉네임 또는 학번">
+  <div id="manual" hidden><input id="manual-url" placeholder="교사가 알려준 결과 제출 주소(선택)"></div>
+  <button id="btn-start">게임 시작 (Day 1 · 객관식)</button>
+</section>
+<section id="s-quiz" hidden>
+  <p id="q-num"></p><h2 id="q-word"></h2><div id="q-opts"></div>
+</section>
+<section id="s-result" hidden>
+  <h2>결과</h2><div class="box" id="result"></div>
+  <button id="btn-send">결과를 선생님께 전송</button>
+  <button id="btn-skip" class="sub">전송하지 않고 끝내기</button>
+  <div class="box" id="send-status" hidden></div>
+</section>
+</main>
+<script>
+const WORDS=[
+ {w:'innovative',ko:'획기적인',d:['보수적인','일시적인','전통적인']},
+ {w:'reluctant',ko:'꺼리는',d:['열성적인','익숙한','충분한']},
+ {w:'ambiguous',ko:'모호한',d:['분명한','엄격한','평범한']},
+ {w:'diminish',ko:'줄이다',d:['늘리다','지키다','옮기다']},
+ {w:'prevalent',ko:'널리 퍼진',d:['드문','숨겨진','오래된']}];
+/** 링크의 e 값을 결과 제출 주소로 해석. script.google.com 의 웹 앱 주소만 허용(학생 데이터 오전송 방지) */
+function resolveEndpoint(e){
+  if(!e) return null;
+  if(/^[A-Za-z0-9_-]{20,200}$/.test(e)) return 'https://script.google.com/macros/s/'+e+'/exec';
+  try{const u=new URL(e);
+    if(u.protocol==='https:'&&u.hostname==='script.google.com'&&/\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname)) return u.href;
+  }catch(_){}
+  return null;
+}
+const $=id=>document.getElementById(id);
+let endpoint=resolveEndpoint(new URLSearchParams(location.search).get('e'));
+let S={};
+function showLink(){
+  $('link-status').textContent=endpoint?'✓ 우리 반 링크로 접속했습니다. 결과를 선생님께 보낼 수 있어요.'
+    :'독학 모드입니다. 결과 전송은 선택 사항이에요.';
+  $('manual').hidden=!!endpoint;
+}
+showLink();
+$('btn-start').onclick=()=>{
+  const nick=$('nick').value.trim();
+  if(!nick){$('nick').focus();return;}
+  if(!endpoint){const m=resolveEndpoint($('manual-url').value.trim()); if(m) endpoint=m;}
+  S={nick,i:0,answers:[],start:new Date(),qStart:Date.now(),sid:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2))};
+  $('s-start').hidden=true;$('s-quiz').hidden=false;ask();
+};
+function ask(){
+  const q=WORDS[S.i];$('q-num').textContent=(S.i+1)+' / '+WORDS.length;$('q-word').textContent=q.w;
+  const opts=[q.ko,...q.d].sort(()=>Math.random()-.5);
+  $('q-opts').innerHTML='';
+  opts.forEach(o=>{const b=document.createElement('button');b.className='opt';b.textContent=o;
+    b.onclick=()=>pick(o);$('q-opts').appendChild(b);});
+  S.qStart=Date.now();
+}
+function pick(o){
+  const q=WORDS[S.i];
+  S.answers.push({qid:'q'+(S.i+1),word:q.w,answer:o,correct:q.ko,isCorrect:o===q.ko,ms:Date.now()-S.qStart});
+  S.i++; if(S.i<WORDS.length) ask(); else finish();
+}
+function finish(){
+  const end=new Date(),ok=S.answers.filter(a=>a.isCorrect).length,t=WORDS.length;
+  S.payload={sessionId:S.sid,gameId:'mc-01',gameName:'객관식',book:'보카퀘스트(샘플)',unit:'Day 1',
+    nickname:S.nick,startedAt:S.start.toISOString(),endedAt:end.toISOString(),
+    durationSec:Math.round((end-S.start)/1000),total:t,correct:ok,wrong:t-ok,score:ok*20,
+    accuracy:Math.round(ok/t*100),completed:true,
+    wrongWords:S.answers.filter(a=>!a.isCorrect).map(a=>a.word),answers:S.answers};
+  $('s-quiz').hidden=true;$('s-result').hidden=false;
+  $('result').textContent='점수 '+S.payload.score+' · 정답률 '+S.payload.accuracy+'% · '+S.payload.durationSec+'초';
+  if(!endpoint) $('btn-send').textContent='결과 전송 (제출 주소가 없어 불가)',$('btn-send').disabled=true;
+}
+$('btn-skip').onclick=()=>{$('s-result').innerHTML='<h2>수고했어요!</h2>';};
+$('btn-send').onclick=async()=>{
+  const b=$('btn-send');b.disabled=true;const st=$('send-status');st.hidden=false;st.textContent='전송 중...';
+  const body=JSON.stringify(S.payload),init={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body};
+  try{
+    const r=await fetch(endpoint,init);const j=await r.json();
+    st.textContent=j.ok?'✓ 전송 완료':'전송 실패: '+(j.error||'알 수 없음'); if(!j.ok) b.disabled=false;
+  }catch(err){
+    try{ await fetch(endpoint,{...init,mode:'no-cors'});   // 응답을 읽을 수 없는 환경: 재전송해도 서버가 중복 제거
+      st.textContent='전송 요청을 보냈습니다. (확인은 선생님 시트에서)';
+    }catch(e2){st.textContent='전송 실패. 인터넷 연결을 확인하고 다시 눌러 주세요.';b.disabled=false;}
+  }
+};
+</script></body></html>
