@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>보카퀘스트 교사 시작 가이드</title>
+<!-- 캡처 이미지는 이 파일과 같은 폴더의 img/ 에 아래 이름으로 넣으면 자동으로 표시됩니다 (가로 1200px 권장).
+     step1.png step2.png step3.png step4.png step5.png step6.png (없으면 "캡처 자리" 안내가 보입니다) -->
+<style>
+:root{--navy:#14213D;--yellow:#FFC93C;--cream:#F4F1E8;--line:#D9D4C5;--mute:#5B6577}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--navy);line-height:1.6}
+header{background:var(--navy);color:#fff;padding:28px 20px;text-align:center}
+header h1{margin:0 0 6px;font-size:24px}header p{margin:0;opacity:.85;font-size:15px}
+main{max-width:760px;margin:0 auto;padding:20px}
+.notice{background:#FFF4CC;border:1px solid var(--yellow);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:15px}
+.step{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}
+.step h2{display:flex;align-items:center;gap:10px;font-size:19px;margin:0 0 10px}
+.n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:800}
+.step ol,.step ul{margin:8px 0;padding-left:22px}
+figure{margin:14px 0 0}
+figure img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+.ph{border:2px dashed var(--line);border-radius:10px;padding:26px 12px;text-align:center;color:var(--mute);font-size:14px;background:#FAF8F1}
+.tip{font-size:14px;color:var(--mute);margin-top:10px}
+details{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:700}
+code{background:#EEE9DA;border-radius:4px;padding:1px 5px}
+footer{text-align:center;color:var(--mute);font-size:13px;padding:10px 20px 40px}
+</style></head>
+<body>
+<header><h1>보카퀘스트 교사 시작 가이드</h1><p>처음 한 번만 하면 됩니다 · 약 5분 · PC의 크롬 브라우저에서 진행하세요</p></header>
+<main>
+<div class="notice">코드는 보거나 고칠 필요가 없습니다. 아래 순서대로 눌러 주세요. 스마트폰에서는 1~3번을 할 수 없고, 이후 결과 확인만 가능합니다.</div>
+
+<section class="step"><h2><span class="n">1</span>시트 준비</h2>
+  <p>시트 위쪽 메뉴에서 <b>보카퀘스트 &gt; ① 시트 준비</b>를 누르세요.</p>
+  <ul><li>처음에는 승인 창이 뜹니다. <b>계속 → 내 계정 선택 → 고급 → 이동 → 허용</b> 순서로 누르세요.</li><li>메뉴가 안 보이면 시트를 새로고침하세요.</li></ul>
+  <figure data-img="step1"></figure></section>
+
+<section class="step"><h2><span class="n">2</span>웹 앱 배포</h2>
+  <ol><li><b>확장 프로그램 → Apps Script</b>를 엽니다.</li><li>오른쪽 위 <b>배포 → 새 배포</b>를 누르고, 유형(톱니바퀴)에서 <b>웹 앱</b>을 고릅니다.</li>
+  <li><b>실행 사용자: 나</b>, <b>액세스 권한: 모든 사용자</b>로 설정하고 <b>배포</b>를 누릅니다.</li></ol>
+  <p class="tip">"모든 사용자"가 안 보이면 학교·회사 계정에서 막아 둔 것입니다. 개인 구글 계정으로 사본을 다시 만들어 주세요.</p>
+  <figure data-img="step2"></figure></section>
+
+<section class="step"><h2><span class="n">3</span>연결 확인</h2>
+  <p>배포 후 나오는 <b>웹 앱 URL</b>을 복사해 새 탭에 붙여넣어 여세요. <b>"연결 완료"</b>가 보이면 성공입니다.</p>
+  <figure data-img="step3"></figure></section>
+
+<section class="step"><h2><span class="n">4</span>학생 명단 입력</h2>
+  <p><b>학생 명단</b> 시트 A열에 학생 이름(또는 학번)을 한 줄에 한 명씩 입력하세요.</p>
+  <p class="tip">학생이 게임에서 입력하는 이름과 글자가 같아야 합니다. 띄어쓰기는 달라도 같은 학생으로 인식돼요. (예: "1반 홍길동" = "1반홍길동")</p>
+  <figure data-img="step4"></figure></section>
+
+<section class="step"><h2><span class="n">5</span>학생에게 링크 공유</h2>
+  <p><b>설정</b> 시트 B4의 <b>우리 반 링크</b>를 복사해 학생들에게 보내세요. 학생은 이름만 입력하면 됩니다.</p>
+  <p class="tip">학생이 이 링크를 한 번 열면 그 기기는 우리 반에 연결된 채로 유지되어, 교재 QR로 들어와도 결과가 선생님께 전송됩니다. 카카오톡 등으로 링크를 보낼 때는 학생에게 <b>"크롬이나 사파리로 열어 주세요"</b>라고 안내해 주세요.</p>
+  <figure data-img="step5"></figure></section>
+
+<section class="step"><h2><span class="n">6</span>결과 보기</h2>
+  <p>학생이 게임을 마치고 <b>결과 전송</b>을 누르면 <b>DASHBOARD</b>에 자동으로 반영됩니다. 먼저 선생님이 한 번 풀어 테스트해 보세요.</p>
+  <figure data-img="step6"></figure></section>
+
+<h2 style="font-size:18px;margin:26px 0 10px">문제가 생겼을 때</h2>
+<details><summary>"모든 사용자" 선택지가 없어요</summary><p>학교·회사 계정은 관리자가 외부 공개를 막아 둔 경우가 많습니다. 개인 구글 계정에서 시트를 사본으로 만들어 사용해 주세요.</p></details>
+<details><summary>학생 결과가 시트에 안 쌓여요</summary><p>배포 설정이 <b>실행: 나 / 액세스: 모든 사용자</b>인지 확인하세요. 설정을 바꿨다면 <b>새 버전으로 다시 배포</b>해야 반영됩니다. 시트 메뉴의 <b>③ 집계 다시 계산</b>도 눌러 보세요.</p></details>
+<details><summary>학생이 링크 없이 접속했어요</summary><p>링크 없이 들어오면 독학 모드로 동작하고 결과는 선생님께 전송되지 않습니다. 학생에게 우리 반 링크를 다시 열도록 안내해 주세요.</p></details>
+</main>
+<footer>도움이 필요하면 담당자에게 문의하세요</footer>
+<script>
+document.querySelectorAll('figure[data-img]').forEach(f=>{
+  const n=f.dataset.img,img=new Image();img.alt=n+' 캡처';img.src='img/'+n+'.png';
+  img.onload=()=>f.appendChild(img);
+  img.onerror=()=>{f.innerHTML='<div class="ph">📷 캡처 자리 · <code>img/'+n+'.png</code></div>';};
+});
+</script></body></html>
